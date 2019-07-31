@@ -9,6 +9,7 @@ cache:
   directories:
     - $HOME/.cache/go-build
 install:
+  - export GO111MODULE=on
   - ./bin/setup-travis
 script:
   - cd $HOME/gopath/src/github.com/teamwork/easytpl
