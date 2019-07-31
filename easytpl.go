@@ -221,11 +221,11 @@ func prepareTemplateTags(body string) (string, map[string][]string) {
 			return match
 		}
 
-		if len(tagParts) > 0 {
+		if len(tagParts[0]) > 0 {
 			tagParts[0] = strings.ToUpper(tagParts[0][0:1]) + tagParts[0][1:]
 		}
 
-		if len(tagParts) > 1 {
+		if len(tagParts[1]) > 0 {
 			tagParts[1] = strings.ToUpper(tagParts[1][0:1]) + tagParts[1][1:]
 		}
 

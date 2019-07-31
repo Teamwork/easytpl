@@ -181,6 +181,14 @@ func TestHTMLSafe(t *testing.T) {
 		expectedErr error
 	}{
 		{
+			`<a href="http://example.com/{%Test.Test,fallback=foo%}?a={%Test.Test,fallback=bar%}">
+			{%Test.Test,fallback=world%}</a>`,
+			map[string]Templateable{},
+			`<a href="http://example.com/foo?a=bar">
+			world</a>`,
+			nil,
+		},
+		{
 			`<a href="http://example.com/{%Test.Test%}?a={%Test.Test%}">{%Test.Test%}</a>`,
 			map[string]Templateable{
 				"Test": TestKeys{keys: Keys{
@@ -291,6 +299,10 @@ func TestPrepareTemplateTags(t *testing.T) {
 		{
 			`this is a test {{ "{{ foo }}" }} bar {% template.tag %} {{hello}}`,
 			`this is a test {{ "{{ foo }}" }} bar {{.Template.Tag}} {{ "{{hello}}" }}`,
+		},
+		{
+			`this is a test <a href="http://teamwork.com/?param=%7B%25ticket.id%25%7D">{%ticket.id%}</a>`,
+			`this is a test <a href="http://teamwork.com/?param={{.Ticket.Id}}">{{.Ticket.Id}}</a>`,
 		},
 		// This is how Squire sends multiple spaces.
 		// TODO: Fix this!
