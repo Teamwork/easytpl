@@ -48,7 +48,7 @@ type Keys map[string]interface{}
 
 var (
 	escapeGo           = regexp.MustCompile(`\{\{.*?\}\}`)
-	tagsToGo           = regexp.MustCompile(`(\{%)[^(%})]+(%})`)
+	tagsToGo           = regexp.MustCompile(`(?i)\\?(\{\%|\%7B\%25)+(.*?)(\%\}|\%25\%7D)+`)
 	findFallback       = regexp.MustCompile(`(?i)\s*(fallback)\s*=`)
 	parseTemplateError = regexp.MustCompile(`executing "email" at \<\.(.*?)\>.*?\"(.*?)\"`)
 )
@@ -203,60 +203,42 @@ func prepareTemplateTags(body string) (string, map[string][]string) {
 		return fmt.Sprintf(`{{ "%s" }}`, match)
 	})
 
-	// Remove &nbsp; inside template tags.
-
-	// Convert {%var%} to {{.var}}
-	matchFrom := 0
-	usedVars := make(map[string][]string)
-	for {
-		loc := tagsToGo.FindStringIndex(body[matchFrom:])
-		if loc == nil {
-			break
-		}
-
-		loc[0] += matchFrom
-		loc[1] += matchFrom
-		matchFrom = loc[1]
-		content := body[loc[0]:loc[1]]
-
-		// Remove &nbsp from the tag, as Squire can add that in some cases.
-		// TODO: because we use the index this mucks up the next iteration of
-		// the loop.
-		//content = findNbsp.ReplaceAllString(content, "")
-
+	usedVars := map[string][]string{}
+	// Convert {%user.firstName%} to {{.User.FirstName}}
+	body = tagsToGo.ReplaceAllStringFunc(body, func(match string) string {
 		// Allow escaping { with \{
-		if loc[0] > 0 && body[loc[0]-1] == '\\' {
-			body = body[:loc[0]-1] + content + body[loc[1]:]
-			continue
+		if match[0] == '\\' {
+			return match[1:]
 		}
 
-		tagParts := strings.Split(content[2:len(content)-2], ",")
-		tagParts[0] = strings.Title(tagParts[0])
-
-		// Make sure matchFrom isn't longer than the length of the string (can
-		// happen if there are multiple spaces after {%).
-		tagName := strings.Join(tagParts, ",")
-		tagNameTrimmed := strings.TrimSpace(tagName)
-		matchFrom -= len(tagName) - len(tagNameTrimmed)
-
-		tag := fmt.Sprintf("{{.%s}}", tagNameTrimmed)
-
-		// Object.Variable
-		u := strings.Split(tagParts[0], ".")
-		if len(u) <= 1 {
-			continue
+		submatch := tagsToGo.FindStringSubmatch(match)
+		if len(submatch) < 3 {
+			return match
 		}
 
-		if _, ok := usedVars[u[0]]; !ok {
-			usedVars[u[0]] = []string{}
+		tagParts := strings.Split(strings.TrimSpace(submatch[2]), ".")
+		if len(tagParts) < 2 {
+			return match
 		}
 
-		if !sliceutil.InStringSlice(usedVars[u[0]], u[1]) {
-			usedVars[u[0]] = append(usedVars[u[0]], u[1])
+		if len(tagParts) > 0 {
+			tagParts[0] = strings.ToUpper(tagParts[0][0:1]) + tagParts[0][1:]
 		}
 
-		body = body[:loc[0]] + replaceTemplateFallback(tag) + body[loc[1]:]
-	}
+		if len(tagParts) > 1 {
+			tagParts[1] = strings.ToUpper(tagParts[1][0:1]) + tagParts[1][1:]
+		}
+
+		if _, ok := usedVars[tagParts[0]]; !ok {
+			usedVars[tagParts[0]] = []string{}
+		}
+
+		if !sliceutil.InStringSlice(usedVars[tagParts[0]], tagParts[1]) {
+			usedVars[tagParts[0]] = append(usedVars[tagParts[0]], tagParts[1])
+		}
+
+		return replaceTemplateFallback(fmt.Sprintf("{{.%s.%s}}", tagParts[0], tagParts[1]))
+	})
 
 	return body, usedVars
 }
