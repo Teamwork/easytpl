@@ -14,8 +14,15 @@ easytpl transforms to Go's template system as follows:
 ```
 
 Template variables can also be escaped so that they are not translated into Go's template system, like so:
+
 ```
 \{%var%} -> {%var%}
+```
+
+Function calls
+
+```go
+{%@user.HasPermission "feature-x"%} -> {{call .user.HasPermission "feature-x"}}
 ```
 
 That's all :-) It doesn't support if, range, or anything else.

@@ -126,6 +126,34 @@ func TestText(t *testing.T) {
 			`Hello {%Test,fallback=foo,another%}`,
 			nil,
 		},
+		// Function call
+		{
+			`Hello {%@Test.GetByName "tesla"%}`,
+			map[string]Templateable{"Test": TestKeys{keys: Keys{
+				"GetByName": func(arg string) string {
+					if arg != "tesla" {
+						return ""
+					}
+					return "Nikola Tesla"
+				},
+			}}},
+			`Hello Nikola Tesla`,
+			nil,
+		},
+		// Function call with spaces
+		{
+			`Hello {% @Test . GetByName "vinci" %}`,
+			map[string]Templateable{"Test": TestKeys{keys: Keys{
+				"GetByName": func(arg string) string {
+					if arg != "vinci" {
+						return ""
+					}
+					return "Leonardo Da Vinci"
+				},
+			}}},
+			`Hello Leonardo Da Vinci`,
+			nil,
+		},
 	}
 
 	for i, tc := range cases {
@@ -156,6 +184,20 @@ func TestHTML(t *testing.T) {
 				}},
 			},
 			`<a href="http://example.com/hello%20%3cworld%3e?a=hello%20%3cworld%3e">hello &lt;world&gt;</a>`,
+			nil,
+		},
+		// Function call
+		{
+			`<p>Hello {%@Test.GetByName "newton"%}</p>`,
+			map[string]Templateable{"Test": TestKeys{keys: Keys{
+				"GetByName": func(arg string) string {
+					if arg != "newton" {
+						return ""
+					}
+					return "Isaac Newton"
+				},
+			}}},
+			`<p>Hello Isaac Newton</p>`,
 			nil,
 		},
 	}
@@ -207,6 +249,20 @@ func TestHTMLSafe(t *testing.T) {
 				}},
 			},
 			`<a href="http://example.com/hello <world>?a=hello <world>">hello <world></a><br`,
+			nil,
+		},
+		// Function call
+		{
+			`<p>Hello {%@Test.GetByName "mileva"%}</p>`,
+			map[string]Templateable{"Test": TestKeys{keys: Keys{
+				"GetByName": func(arg string) string {
+					if arg != "mileva" {
+						return ""
+					}
+					return "Mileva Marić"
+				},
+			}}},
+			`<p>Hello Mileva Marić</p>`,
 			nil,
 		},
 	}

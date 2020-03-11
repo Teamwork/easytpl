@@ -229,6 +229,11 @@ func prepareTemplateTags(body string) (string, map[string][]string) {
 			tagParts[1] = strings.ToUpper(tagParts[1][0:1]) + tagParts[1][1:]
 		}
 
+		if strings.HasPrefix(tagParts[0], "@") {
+			// Convert {% @user.HasPermission "feature-x" %} to {{call .user.HasPermission "feature-x"}}
+			return replaceTemplateFuncCall(strings.TrimSpace(tagParts[0]), strings.TrimSpace(tagParts[1]))
+		}
+
 		if _, ok := usedVars[tagParts[0]]; !ok {
 			usedVars[tagParts[0]] = []string{}
 		}
@@ -272,4 +277,14 @@ func replaceTemplateFallback(tag string) string {
 	fallback = strings.TrimSpace(findFallback.ReplaceAllString(fallback, ""))
 
 	return fmt.Sprintf("{{if %s}}{{%s}}{{else}}%s{{end}}", variable, variable, fallback)
+}
+
+func replaceTemplateFuncCall(variable, method string) string {
+	variable = "." + variable[1:]
+
+	parts := strings.SplitN(method, " ", 2)
+	method = parts[0]
+	args := parts[1]
+
+	return fmt.Sprintf("{{call %s.%s %s}}", variable, method, args)
 }
