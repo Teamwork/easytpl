@@ -1,4 +1,4 @@
-module github.com/Teamwork/easytpl
+module github.com/teamwork/easytpl
 
 go 1.12
 
