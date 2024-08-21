@@ -2,10 +2,10 @@
 //
 // easytpl transforms to Go's template system as follows:
 //
-//  {%var%}                          -> {{Var}}
-//  {%var.val%}                      -> {{Var.Val}}
-//  {%var.val,fallback=some string%} -> {{if .Var.Val}}{{.Var.Val}}{{else}}some string{{end}}
-//  {{var.val}}                      -> {{ "{{var.val}}" }}
+//	{%var%}                          -> {{Var}}
+//	{%var.val%}                      -> {{Var.Val}}
+//	{%var.val,fallback=some string%} -> {{if .Var.Val}}{{.Var.Val}}{{else}}some string{{end}}
+//	{{var.val}}                      -> {{ "{{var.val}}" }}
 //
 // That's all :-) It doesn't support if, range, or anything else.
 package easytpl
@@ -20,7 +20,7 @@ import (
 	"strings"
 	textTemplate "text/template"
 
-	"github.com/teamwork/utils/sliceutil"
+	"github.com/teamwork/utils/v2/sliceutil"
 )
 
 // Templateable allows template substitution.
@@ -56,9 +56,9 @@ var (
 // Text attempts to parse the template with text/template. The templatables in
 // keys will be used as template parameters; for example with:
 //
-//   map[string]Templateable{
-//       "Inbox": inbox,
-//   }
+//	map[string]Templateable{
+//	    "Inbox": inbox,
+//	}
 //
 // You get {%inbox.ID%} (or any other keys that the inbox type has).
 //
@@ -238,7 +238,7 @@ func prepareTemplateTags(body string) (string, map[string][]string) {
 			usedVars[tagParts[0]] = []string{}
 		}
 
-		if !sliceutil.InStringSlice(usedVars[tagParts[0]], tagParts[1]) {
+		if !sliceutil.Contains(usedVars[tagParts[0]], tagParts[1]) {
 			usedVars[tagParts[0]] = append(usedVars[tagParts[0]], tagParts[1])
 		}
 
@@ -250,11 +250,11 @@ func prepareTemplateTags(body string) (string, map[string][]string) {
 
 // replaceTemplateFallback takes input like this:
 //
-//   {{.Inbox.Name,fallback=this inbox}}
+//	{{.Inbox.Name,fallback=this inbox}}
 //
 // and turns it in to proper template tags:
 //
-//   {{if .Inbox.Name}}{{.Inbox.Name}}{{else}}this inbox{{end}}
+//	{{if .Inbox.Name}}{{.Inbox.Name}}{{else}}this inbox{{end}}
 func replaceTemplateFallback(tag string) string {
 	if !strings.Contains(strings.ToLower(tag), "fallback") {
 		return tag
